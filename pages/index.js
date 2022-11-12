@@ -4,32 +4,56 @@ import styled from "styled-components";
 import Menu from "../src/components/Menu";
 import { CSSReset } from "../src/components/CSSReset";
 import { StyledTimeline } from "../src/components/Timeline";
+import { videoService } from "../src/services/videoService";
+
 
 function HomePage() {
-
+  const service = videoService();
   const [valorDoFiltro, setValorDoFiltro] = React.useState("");
+  const [playlists, setPlaylists] = React.useState({});
+
+  React.useEffect(() => {
+    service
+      .getAllVideos()
+      .then((dados) => {
+        const novasPlaylists = { ...playlists };
+        dados.data.forEach((video) => {
+          if (!novasPlaylists[video.playlist]) novasPlaylists[video.playlist] = [];
+          novasPlaylists[video.playlist].push(video);
+        })
+        setPlaylists(playlists);
+      });
+  }, [])
+  
+
+
 
   return (
     <>
       <CSSReset />
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        flex: 1,
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+        }}
+      >
         {/* Prop Drilling - passar propriedade de pai para filho */}
-        <Menu valorDoFiltro={valorDoFiltro} setValorDoFiltro={setValorDoFiltro} />
+        <Menu
+          valorDoFiltro={valorDoFiltro}
+          setValorDoFiltro={setValorDoFiltro}
+        />
         <Header />
-        <Timeline searchValue={valorDoFiltro} playlists={config.playlists} />
+        <Timeline searchValue={valorDoFiltro} playlists={playlists} />
       </div>
     </>
   );
 }
-  
-export default HomePage
+
+export default HomePage;
 
 const StyledHeader = styled.div`
-  background-color: ${({theme}) => theme.backgroundLevel1};
+  background-color: ${({ theme }) => theme.backgroundLevel1};
 
   img {
     width: 80px;
@@ -45,61 +69,55 @@ const StyledHeader = styled.div`
   }
 `;
 const StyledBanner = styled.div`
-  background-image: url(${({bg}) => bg});
+  background-image: url(${({ bg }) => bg});
   /* background-image: url(${config.bg}); */
   height: 230px;
 `;
 function Header() {
   return (
     <StyledHeader>
-      <StyledBanner bg={config.bg}/>
+      <StyledBanner bg={config.bg} />
       <section className="user-info">
         <img src={`https://github.com/${config.github}.png`} />
         <div>
-          <h2>
-            {config.name}
-          </h2>
-          <p>
-            {config.job}
-          </p>
+          <h2>{config.name}</h2>
+          <p>{config.job}</p>
         </div>
       </section>
     </StyledHeader>
-  )
+  );
 }
 
-function Timeline({searchValue, ...props}) {
+function Timeline({ searchValue, ...props }) {
   // console.log("Dentro do componente", props.playlists);
   const playlistNames = Object.keys(props.playlists);
 
   return (
     <StyledTimeline>
-      {playlistNames.map(function(playlistName) {
+      {playlistNames.map(function (playlistName) {
         const videos = props.playlists[playlistName];
         return (
-          <section key={playlistName} >
+          <section key={playlistName}>
             <h2>{playlistName}</h2>
             <div>
               {videos
-              .filter((video) => {
+                .filter((video) => {
                   const titleNormalized = video.title.toLowerCase();
                   const searchValueNormalized = searchValue.toLowerCase();
-                  return titleNormalized.includes(searchValueNormalized)
+                  return titleNormalized.includes(searchValueNormalized);
                 })
                 .map((video) => {
                   return (
                     <a key={video.url} href={video.url}>
                       <img src={video.thumb} />
-                      <span>
-                        {video.title}
-                      </span>
+                      <span>{video.title}</span>
                     </a>
-                  )
+                  );
                 })}
             </div>
           </section>
-        )
+        );
       })}
     </StyledTimeline>
-  )
+  );
 }
